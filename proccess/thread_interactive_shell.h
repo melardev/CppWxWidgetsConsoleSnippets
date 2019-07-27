@@ -4,7 +4,7 @@
 #include <wx/txtstrm.h>
 #include <wx/thread.h>
 
-namespace InteractiveShellWithTimer
+namespace InteractiveShellWithThreads
 {
 	wxEvtHandler* handler;
 	wxProcess* process;
@@ -28,102 +28,45 @@ namespace InteractiveShellWithTimer
 		}
 	}
 
-	void readFromProcess()
-	{
-		char buffer[4096];
-		size_t bytesRead = 0;
-		if (process && process->IsErrorAvailable())
-		{
-			wxInputStream* in = process->GetErrorStream();
-
-			while (in->CanRead() && (bytesRead = in->Read(&buffer, sizeof(buffer)).LastRead()) > 0)
-			{
-				buffer[bytesRead] = '\0';
-				wxPrintf("%s", wxString(buffer, 0, bytesRead));
-				// std::cout << std::string(buffer, 0, bytesRead);
-			};
-		}
-		bytesRead = 0;
-		if (process && process->IsInputAvailable())
-		{
-			wxInputStream* in = process->GetInputStream();
-			while (in->CanRead() && (bytesRead = in->Read(&buffer, sizeof(buffer)).LastRead()) > 0)
-			{
-				buffer[bytesRead] = '\0';
-				wxPrintf("%s", wxString(buffer, 0, bytesRead));
-				// std::cout << std::string(buffer, 0, bytesRead);
-			}
-		}
-	}
-
 	class ProcessEvtHandler : public wxEvtHandler
 	{
 	public:
-		ProcessEvtHandler(): wxEvtHandler()
+		ProcessEvtHandler() : wxEvtHandler()
 		{
-			m_Timer = new wxTimer(this, ID_PROC);
-			m_Timer->Start(100, false /* oneShot? No*/);
-		}
-
-		void OnTimer(wxTimerEvent& event)
-		{
-			if (process)
-				readFromProcess();
 		}
 
 		void OnProcessTerminated(wxProcessEvent& e)
 		{
 			running = false;
-			if (process)
-				readFromProcess();
-
-			m_Timer->Stop();
-			delete m_Timer;
-			delete process;
+			wxTheApp->ExitMainLoop();
+			process->CloseOutput();
 		}
-
-	private:
-		wxTimer* m_Timer;
 
 	DECLARE_EVENT_TABLE()
 	};
 
 
 	BEGIN_EVENT_TABLE(ProcessEvtHandler, wxEvtHandler)
-			EVT_TIMER(ID_PROC, ProcessEvtHandler::OnTimer)
 			EVT_END_PROCESS(wxID_ANY, ProcessEvtHandler::OnProcessTerminated)
 			END_EVENT_TABLE()
 
-	class ConsoleReaderThread : public wxThread
+	class RunnableThread : public wxThread
 	{
 	public:
-		ConsoleReaderThread(): wxThread(wxTHREAD_JOINABLE)
+
+		RunnableThread(std::function<void*()> func) : wxThread(wxTHREAD_JOINABLE), m_Runnable(func)
 		{
+			m_Runnable = func;
 		}
 
 	protected:
 		virtual void* Entry() override
 		{
-			char buffer[1024];
-			while (running)
-			{
-				std::cin.getline(buffer, sizeof(buffer));
-				wxString command(buffer);
-				if (!running)
-					break;
-
-				writeIntoProcess(command);
-
-				if (command.Strip(wxString::both).CmpNoCase("exit") == 0)
-				{
-					running = false;
-					wxTheApp->ExitMainLoop();
-					break;
-				}
-			}
-
-			return 0;
+			return m_Runnable();
 		}
+
+	private:
+		std::function<void*()> m_Runnable;
 	};
 
 	static void main()
@@ -159,22 +102,89 @@ namespace InteractiveShellWithTimer
 		// change it in EVT_END_PROCESS first argument
 		process = new wxProcess(handler);
 
-
 		process->Redirect();
-
 
 		// wxEXEC_SHOW_CONSOLE targets MSW only
 		const long pid = wxExecute(cmd, wxEXEC_ASYNC | wxEXEC_SHOW_CONSOLE, process);
 
-		wxThread* consoleReaderThread = new ConsoleReaderThread();
-		consoleReaderThread->Create();
-		consoleReaderThread->Run();
+
+		// Console Input Stream
+		wxThread* consoleInputThread = new RunnableThread([&]() -> void*
+		{
+			char buffer[1024];
+			while (running)
+			{
+				std::cin.getline(buffer, sizeof(buffer));
+				wxString command(buffer);
+				if (!running)
+					break;
+
+				writeIntoProcess(command);
+
+				if (command.Strip(wxString::both).CmpNoCase("exit") == 0)
+				{
+					running = false;
+					wxTheApp->ExitMainLoop();
+					process->CloseOutput();
+					break;
+				}
+			}
+
+			return nullptr;
+		});
+		consoleInputThread->Create();
+		consoleInputThread->Run();
+
+
+		// Process Output Stream
+		wxThread* outputProcessReaderThread = new RunnableThread([&]() -> void*
+		{
+			char buffer[4096];
+			size_t bytesRead = 0;
+
+			wxInputStream* in = process->GetInputStream();
+
+			while ((bytesRead = in->Read(&buffer, sizeof(buffer)).LastRead()) > 0)
+			{
+				buffer[bytesRead] = '\0';
+				wxPrintf("%s", wxString(buffer, 0, bytesRead));
+				// std::cout << std::string(buffer, 0, bytesRead);
+			};
+			return nullptr;
+		});
+		outputProcessReaderThread->Create();
+		outputProcessReaderThread->Run();
+
+
+		// Process Error Stream
+		wxThread* errorProcessReaderThread = new RunnableThread([&]() -> void*
+		{
+			char buffer[4096];
+			size_t bytesRead = 0;
+			wxInputStream* in = process->GetErrorStream();
+			while ((bytesRead = in->Read(&buffer, sizeof(buffer)).LastRead()) > 0)
+			{
+				buffer[bytesRead] = '\0';
+				wxPrintf("%s", wxString(buffer, 0, bytesRead));
+				// std::cout << std::string(buffer, 0, bytesRead);
+			}
+
+			return nullptr;
+		});
+
+		errorProcessReaderThread->Create();
+		errorProcessReaderThread->Run();
 
 		wxTheApp->OnInit();
 		wxTheApp->OnRun();
 
-		consoleReaderThread->Wait();
-		delete consoleReaderThread;
+		outputProcessReaderThread->Wait();
+		errorProcessReaderThread->Wait();
+		consoleInputThread->Wait();
+
+		delete outputProcessReaderThread;
+		delete errorProcessReaderThread;
+		delete consoleInputThread;
 
 		// Exit the app
 		wxTheApp->OnExit();

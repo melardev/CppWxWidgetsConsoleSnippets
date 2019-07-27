@@ -191,7 +191,9 @@
     <ClInclude Include="proccess\exec_cmd.h" />
     <ClInclude Include="proccess\get_set_env.h" />
     <ClInclude Include="proccess\killproc.h" />
-    <ClInclude Include="proccess\not_ready\timer_interactive_shell.h" />
+    <ClInclude Include="proccess\thread_interactive_shell.h" />
+    <ClInclude Include="proccess\thread_interactive_shell_merge_err_out.h" />
+    <ClInclude Include="proccess\timer_interactive_shell.h" />
     <ClInclude Include="proccess\not_ready\process_streams.h" />
     <ClInclude Include="proccess\not_ready\process_piping.h" />
     <ClInclude Include="proccess\not_ready\process.h" />
