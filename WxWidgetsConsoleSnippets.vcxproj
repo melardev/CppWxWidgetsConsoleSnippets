@@ -23,7 +23,7 @@
     <ProjectGuid>{A55831EF-CE24-4D27-A69C-6BCDA7097122}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
     <RootNamespace>WxWidgetsConsoleSnippets</RootNamespace>
-    <WindowsTargetPlatformVersion>10.0.17763.0</WindowsTargetPlatformVersion>
+    <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
     <VcpkgTriplet Condition="'$(Platform)'=='Win32'">x86-windows-static</VcpkgTriplet>
     <VcpkgTriplet Condition="'$(Platform)'=='x64'">x64-windows-static</VcpkgTriplet>
     <ProjectName>WxWidgetsConsoleSnippets</ProjectName>
@@ -32,26 +32,26 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
-    <PlatformToolset>v141</PlatformToolset>
+    <PlatformToolset>v142</PlatformToolset>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
-    <PlatformToolset>v141</PlatformToolset>
+    <PlatformToolset>v142</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
-    <PlatformToolset>v141</PlatformToolset>
+    <PlatformToolset>v142</PlatformToolset>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
-    <PlatformToolset>v141</PlatformToolset>
+    <PlatformToolset>v142</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
@@ -191,6 +191,7 @@
     <ClInclude Include="proccess\exec_cmd.h" />
     <ClInclude Include="proccess\get_set_env.h" />
     <ClInclude Include="proccess\killproc.h" />
+    <ClInclude Include="proccess\not_ready\timer_interactive_shell.h" />
     <ClInclude Include="proccess\not_ready\process_streams.h" />
     <ClInclude Include="proccess\not_ready\process_piping.h" />
     <ClInclude Include="proccess\not_ready\process.h" />
@@ -199,9 +200,11 @@
     <ClInclude Include="text\fgets.h" />
     <ClInclude Include="text\not_ready\regex_snippet.h" />
     <ClInclude Include="text\not_ready\string_conversions_demo.h" />
+    <ClInclude Include="text\strip_str.h" />
     <ClInclude Include="text\string_format.h" />
     <ClInclude Include="text\string_tokenizer_usage.h" />
     <ClInclude Include="text\string_usage.h" />
+    <ClInclude Include="text\substr.h" />
     <ClInclude Include="text\upper_lower.h" />
     <ClInclude Include="text\wxsnprintf_demo.h" />
     <ClInclude Include="text\wxstring_conv.h" />
